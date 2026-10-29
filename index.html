@@ -55,7 +55,15 @@ h2{font-size:17px;font-weight:700;margin:0;text-wrap:balance}
 input#q{flex:1 1 160px;min-width:0;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:6px 10px;font:inherit}
 #graph{width:100%;height:600px;display:block;touch-action:none;cursor:grab}
 #graph text{font-size:10px;fill:var(--muted);pointer-events:none;font-family:var(--f-body)}
-#graph text.c{font-size:11px;fill:var(--ink);font-weight:700}
+#graph text.c{font-size:11px;fill:var(--creator);font-weight:700}
+#graph text.u{fill:var(--accent);font-weight:500}
+.cn{color:var(--creator);font-weight:600}
+.un{color:var(--accent);font-weight:500}
+.rel{display:grid;gap:10px}
+.rel div{border-top:1px solid var(--line);padding-top:8px;display:grid;gap:3px}
+.rel .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.rel p{margin:0;font-size:12px;color:var(--muted);line-height:1.55}
+.rel .meta{font-size:12px;color:var(--muted)}
 .legend{display:flex;flex-wrap:wrap;gap:14px;padding:10px 14px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
 #detail{padding:16px;display:grid;gap:12px;align-content:start}
@@ -160,17 +168,17 @@ body{-webkit-font-smoothing:antialiased}
       </div>
       <div class="toolbar">
         <button class="chip" data-f="all" aria-pressed="true" id="f-all">全部燈號</button>
-        <button class="chip" data-f="red" aria-pressed="false" id="f-red">🔴 高危</button>
-        <button class="chip" data-f="amber" aria-pressed="false" id="f-amber">🟡 降溫</button>
+        <button class="chip" data-f="red" aria-pressed="false" id="f-red">🔴 真退坑</button>
+        <button class="chip" data-f="amber" aria-pressed="false" id="f-amber">🟡 預警</button>
         <button class="chip" data-f="green" aria-pressed="false" id="f-green">🟢 升溫</button>
         <button class="chip" data-f="lock" aria-pressed="false" id="f-lock">單點暈船</button>
         <input id="q" type="search" placeholder="搜尋用戶或主播" aria-label="搜尋用戶或主播">
       </div>
       <svg id="graph" role="img" aria-label="用戶與主播送禮關係圖"></svg>
       <div class="legend">
-        <span><i class="dot" style="background:var(--creator)"></i>主播（大小＝收到鑽石）</span>
-        <span><i class="dot" style="background:var(--red)"></i>高危</span>
-        <span><i class="dot" style="background:var(--amber)"></i>降溫</span>
+        <span><i class="dot" style="background:var(--creator)"></i><b class="cn">主播</b>（大小＝收到鑽石）</span><span><b class="un">用戶</b>（點的顏色＝燈號）</span>
+        <span><i class="dot" style="background:var(--red)"></i>真退坑</span>
+        <span><i class="dot" style="background:var(--amber)"></i>預警</span>
         <span><i class="dot" style="background:var(--green)"></i>升溫／新進</span>
         <span><i class="dot" style="background:var(--flat)"></i>穩定</span>
         <span>沒有達門檻連線的用戶不畫在圖上，仍列在下方表格</span>
@@ -180,8 +188,12 @@ body{-webkit-font-smoothing:antialiased}
   </section>
 
   <section class="section">
-    <div class="head"><h2>需要優先處理的用戶</h2><span class="sub">套用上方的等級與活動篩選。10 月以 31/28 換算整月後與 8、9 月平均比較</span></div>
-    <div class="card tbl"><table id="watch"><thead><tr><th>用戶</th><th>燈號</th><th>原型</th><th class="r">Lv</th><th class="r">90 天鑽石</th><th>8→9→10 月</th><th>主要主播</th><th>指向轉移</th></tr></thead><tbody></tbody></table></div>
+    <div class="head"><h2>需要優先處理的用戶</h2><span class="sub">套用上方的等級與活動篩選</span></div>
+    <div class="card" style="padding:12px 16px"><div class="tbl"><table style="font-size:12px"><thead><tr><th></th><th>活躍度持平</th><th>活躍度下滑</th></tr></thead><tbody>
+      <tr style="cursor:default"><th>送禮持平</th><td>穩定</td><td><span class="pill amber">🟡 注意力先走</span>（90 天送禮 ≥ 30 萬鑽才算）</td></tr>
+      <tr style="cursor:default"><th>送禮下滑</th><td><span class="pill amber">🟡 錢包冷</span> 人還在，錢變少或流向別人</td><td><span class="pill red">🔴 真退坑</span></td></tr></tbody></table></div>
+      <p class="sub" style="font-size:12px;margin:8px 0 0">送禮下滑：8、9 月平均 ≥ 50 萬鑽，10 月（以 31/28 換算整月）不到平均的 60%。活躍度用「進入直播間」次數，10 月不到 8、9 月平均的一半算下滑，歸零算消失。升溫：10 月送禮 ≥ 100 萬鑽且超過平均 2 倍。</p></div>
+    <div class="card tbl"><table id="watch"><thead><tr><th>用戶</th><th>燈號</th><th>原型</th><th class="r">Lv</th><th class="r">90 天鑽石</th><th>送禮 8→9→10 月</th><th>進直播間 8→9→10 月</th><th>主要主播</th><th>指向轉移</th></tr></thead><tbody></tbody></table></div>
   </section>
 
   <section class="section">
@@ -202,7 +214,7 @@ body{-webkit-font-smoothing:antialiased}
   <section class="notes">
     <div class="card"><h2>等級對不起來</h2><p>Mixpanel 的 vip_level 和報名表上的等級常常不同，有用戶報名表是 Lv.73、Mixpanel 卻是 0。篩選用的是 Mixpanel 等級，報名表等級列在同樂會表格裡。</p></div>
     <div class="card"><h2>高消費和同樂會幾乎不重疊</h2><p>Lv.50+ 名單 98 人中，只有 2 人到過 7 月或 9 月同樂會。到場者 55 人中，90 天送禮超過 100 萬鑽的只有 7 人。</p></div>
-    <div class="card"><h2>只有兩種訊號</h2><p>疼愛分裡的女神聚會邀約、訂製徽章、冠名不在 Mixpanel。這版只看送禮鑽石與私訊則數，HHI 以鑽石佔比計算。撒網型是否為特權獵手，需要特權使用紀錄才能判定。</p></div>
+    <div class="card"><h2>訊號來源</h2><p>燈號結合送禮鑽石與進入直播間次數；關係鏈文字依送禮與私訊的月走勢自動產生，沒有讀私訊內容。女神聚會邀約、訂製徽章、冠名不在 Mixpanel。撒網型是否為特權獵手，需要特權使用紀錄才能判定。</p></div>
   </section>
 </div>
 
@@ -236,8 +248,8 @@ document.getElementById('unlock').addEventListener('submit',async ev=>{
 });
 function start(DATA,OLD){
 const fmt=n=>n==null?'—':n>=1e6?(n/1e6).toFixed(n>=1e7?1:2)+'M':n>=1e3?Math.round(n/1e3)+'K':String(n);
-const SIG={red:'高危',amber:'降溫',green:'升溫',flat:'穩定'};
-const EVN={jul:'7/26',sep:'9/19',sepreg:'9/19 報名未到'};
+const SIG={red:'真退坑',amber:'預警',green:'升溫',flat:'穩定'};
+const EVN={jul:'7/26',sep:'9/19',sepreg:'9/19 報名（未確認到場）'};
 const U=DATA.users;
 const uMap=new Map(U.map(u=>[u.id,u])), cMap=new Map(DATA.creators.map(c=>[c.id,c]));
 const esc=s=>String(s).replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
@@ -256,7 +268,7 @@ const sigOk=u=>st.sig==='all'||(st.sig==='lock'?u.a==='單點暈船大戶':u.sig
 function tiles(list){
   const tot=list.reduce((a,u)=>a+u.d,0),cnt=k=>list.filter(u=>u.sig===k).length;
   $('tiles').innerHTML=[['',list.length,'篩選後用戶'],['',fmt(tot),'90 天送禮鑽石'],
-   ['red',cnt('red'),'🔴 高危（歸零／斷崖）'],['amber',cnt('amber'),'🟡 降溫'],
+   ['red',cnt('red'),'🔴 真退坑（送禮＋活躍都掉）'],['amber',cnt('amber'),'🟡 預警（錢包冷／注意力先走）'],
    ['green',cnt('green'),'🟢 升溫／新進'],['',list.filter(u=>u.a==='單點暈船大戶').length,'單點暈船大戶']]
    .map(([c,b,s])=>`<div class="tile ${c}"><b>${b}</b><span>${s}</span></div>`).join('');
 }
@@ -285,7 +297,7 @@ function render(){
   const cd=new Map(); raw.forEach(l=>cd.set(l[1],(cd.get(l[1])||0)+l[2]));
   const ud=new Set(raw.map(l=>l[0]));
   nodes=[...[...cd].map(([id,d])=>({id,type:'c',d})),...us.filter(u=>ud.has(u.id)).map(u=>({id:u.id,type:'u',d:u.d,sig:u.sig}))];
-  links=raw.map(([s,t,v,c])=>({source:s,target:t,v,c}));
+  links=raw.map(([s,t,v,c,tx])=>({source:s,target:t,v,c,t:tx}));
   rC=d3.scaleSqrt().domain([0,d3.max(nodes.filter(n=>n.type==='c'),n=>n.d)||1]).range([5,26]);
   rU=d3.scaleSqrt().domain([0,d3.max(nodes.filter(n=>n.type==='u'),n=>n.d)||1]).range([4,15]);
   const w=d3.scaleSqrt().domain([st.min,d3.max(links,l=>l.v)||st.min+1]).range([.8,7]);
@@ -295,9 +307,10 @@ function render(){
     .attr('stroke','var(--panel)').attr('stroke-width',1.2).style('cursor','pointer').attr('tabindex',0)
     .on('click',(e,d)=>select(d.id)).on('keydown',(e,d)=>{if(e.key==='Enter')select(d.id)});
   node.append('title').text(d=>`${d.id} · ${fmt(d.d)}`);
+  link.append('title').text(l=>`${l.source.id} → ${l.target.id}\n${l.t||''}`);
   const many=nodes.length>80;
   label=g.append('g').selectAll('text').data(nodes.filter(n=>!many||n.type==='c'&&n.d>=5e6||n.type==='u'&&n.d>=1.5e7)).join('text')
-    .attr('class',d=>d.type==='c'?'c':'').attr('text-anchor','middle').text(d=>d.id);
+    .attr('class',d=>d.type==='c'?'c':'u').attr('text-anchor','middle').text(d=>d.id);
   node.call(d3.drag().on('drag',(e,d)=>{d.x=e.x;d.y=e.y;draw();}));
   const sim=d3.forceSimulation(nodes).force('link',d3.forceLink(links).id(d=>d.id).distance(50).strength(.5))
     .force('charge',d3.forceManyBody().strength(many?-45:-120)).force('collide',d3.forceCollide(d=>r(d)+(many?2:10)))
@@ -335,29 +348,28 @@ function select(id){
   hl=id; if(node)applyHL();
   const u=uMap.get(id);
   if(u){
-    det.innerHTML=`<div><div class="eyebrow">用戶</div><h2>${esc(u.id)}</h2>
+    det.innerHTML=`<div><div class="eyebrow">用戶</div><h2 class="un">${esc(u.id)}</h2>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><span class="pill ${u.sig}">${esc(u.sl)}</span><span class="pill arch">${esc(u.a)}</span></div></div>
       <dl class="kv"><dt>Mixpanel 等級</dt><dd class="num">${u.lv??'—'}</dd>${u.slv!=null?`<dt>報名表等級</dt><dd class="num">${u.slv}</dd>`:''}
       <dt>同樂會</dt><dd>${evText(u)}</dd>
       <dt>90 天送禮</dt><dd class="num">${fmt(u.d)} 鑽</dd><dt>送禮次數</dt><dd class="num">${u.g}</dd>
       <dt>私訊則數</dt><dd class="num">${u.c}</dd><dt>送禮主播數</dt><dd class="num">${u.nc}</dd>
-      <dt>HHI（鑽石）</dt><dd class="num">${u.hhi??'—'}</dd><dt>主要主播</dt><dd>${esc(u.top??'—')} ${u.ts?`<span class="num">(${Math.round(u.ts*100)}%)</span>`:''}</dd>
+      <dt>HHI（鑽石）</dt><dd class="num">${u.hhi??'—'}</dd><dt>主要主播</dt><dd class="cn">${esc(u.top??'—')} ${u.ts?`<span class="num">(${Math.round(u.ts*100)}%)</span>`:''}</dd>
       ${u.mig?`<dt>指向轉移</dt><dd>${esc(u.mig)}</dd>`:''}</dl>
       <div><div class="eyebrow">送禮鑽石（8／9／10 月）</div>${bars(u.m,['8月','9月','10月*'])}</div>
+      <div><div class="eyebrow">進直播間次數（8／9／10 月）</div>${bars(u.act,['8月','9月','10月*'])}</div>
       <div><div class="eyebrow">私訊則數（8／9／10 月）</div>${bars(u.cm,['8月','9月','10月*'])}</div>
-      ${u.p.length?`<div class="tbl"><table><thead><tr><th>主播</th><th class="r">鑽石</th><th class="r">私訊</th></tr></thead><tbody>
-      ${u.p.map(([t,v,c])=>`<tr data-id="${esc(t)}"><td>${esc(t)}</td><td class="r num">${fmt(v)}</td><td class="r num">${c??'—'}</td></tr>`).join('')}</tbody></table></div>`:''}
+      ${u.p.length?`<div><div class="eyebrow">關係鏈</div><div class="rel">${u.p.map(([t,v,c,tx])=>`<div><div class="top"><a href="#" class="cn" data-go="${esc(t)}">${esc(t)}</a><span class="meta num">${fmt(v)} 鑽 · 私訊 ${c??'—'}</span></div><p>${esc(tx||'')}</p></div>`).join('')}</div></div>`:''}
       <p class="sub" style="font-size:12px">* 10 月資料至 10/28${u.src==='event'?'；同樂會名單的私訊沒有拆到主播':''}${u.partial?'；主播明細不完整（小額未列）':''}</p>`;
   } else {
     const fans=links.filter(l=>l.target.id===id).sort((a,b)=>b.v-a.v);
     const c=cMap.get(id)||{locked:[]};
-    det.innerHTML=`<div><div class="eyebrow">主播</div><h2>${esc(id)}</h2></div>
+    det.innerHTML=`<div><div class="eyebrow">主播</div><h2 class="cn">${esc(id)}</h2></div>
       <dl class="kv"><dt>圖上收到鑽石</dt><dd class="num">${fmt(fans.reduce((a,l)=>a+l.v,0))} 鑽</dd><dt>圖上送禮用戶</dt><dd class="num">${fans.length}</dd>
       <dt>單點綁定</dt><dd>${c.locked.length?esc(c.locked.join('、')):'—'}</dd></dl>
-      <div class="tbl"><table><thead><tr><th>用戶</th><th class="r">鑽石</th><th class="r">Lv</th><th>燈號</th></tr></thead><tbody>
-      ${fans.map(l=>{const u=uMap.get(l.source.id);return `<tr data-id="${esc(u.id)}"><td>${esc(u.id)}</td><td class="r num">${fmt(l.v)}</td><td class="r num">${u.lv??'—'}</td><td><span class="pill ${u.sig}">${SIG[u.sig]}</span></td></tr>`}).join('')}</tbody></table></div>`;
+      <div><div class="eyebrow">關係鏈</div><div class="rel">${fans.map(l=>{const u=uMap.get(l.source.id);return `<div><div class="top"><a href="#" class="un" data-go="${esc(u.id)}">${esc(u.id)}</a><span class="meta"><span class="num">${fmt(l.v)} 鑽 · Lv ${u.lv??'—'}</span> <span class="pill ${u.sig}">${SIG[u.sig]}</span></span></div><p>${esc(l.t||'')}</p></div>`}).join('')}</div></div>`;
   }
-  det.querySelectorAll('tr[data-id]').forEach(tr=>tr.addEventListener('click',()=>select(tr.dataset.id)));
+  det.querySelectorAll('[data-go]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();select(a.dataset.go)}));
 }
 
 // tables
@@ -369,20 +381,20 @@ function bindRows(sel){document.querySelectorAll(sel).forEach(tr=>{
 function tables(){
   const base=U.filter(baseOk);
   const w=base.filter(u=>u.sig==='red'||u.sig==='amber').sort((a,b)=>order[a.sig]-order[b.sig]||b.d-a.d);
-  document.querySelector('#watch tbody').innerHTML=w.length?w.map(u=>`<tr class="sev ${u.sig}" data-id="${esc(u.id)}" tabindex="0"><td>${esc(u.id)}</td><td><span class="pill ${u.sig}">${esc(u.sl.slice(2))}</span></td><td>${esc(u.a)}</td>
-   <td class="r num">${u.lv??'—'}</td><td class="r num">${fmt(u.d)}</td><td>${spark(u.m)} <span class="num" style="font-size:11px;color:var(--muted)">${u.m.map(fmt).join(' → ')}</span></td><td>${esc(u.top??'—')}</td><td>${esc(u.mig||'—')}</td></tr>`).join('')
-   :`<tr><td colspan="8" style="color:var(--muted)">這個篩選範圍內沒有高危或降溫的用戶。</td></tr>`;
+  document.querySelector('#watch tbody').innerHTML=w.length?w.map(u=>`<tr class="sev ${u.sig}" data-id="${esc(u.id)}" tabindex="0"><td class="un">${esc(u.id)}</td><td><span class="pill ${u.sig}">${esc(u.sl.slice(2))}</span></td><td>${esc(u.a)}</td>
+   <td class="r num">${u.lv??'—'}</td><td class="r num">${fmt(u.d)}</td><td>${spark(u.m)} <span class="num" style="font-size:11px;color:var(--muted)">${u.m.map(fmt).join(' → ')}</span></td><td>${spark(u.act)} <span class="num" style="font-size:11px;color:var(--muted)">${u.act.join(' → ')}</span></td><td class="cn">${esc(u.top??'—')}</td><td>${esc(u.mig||'—')}</td></tr>`).join('')
+   :`<tr><td colspan="9" style="color:var(--muted)">這個篩選範圍內沒有真退坑或預警的用戶。</td></tr>`;
   const cr=new Map();
   base.forEach(u=>DATA.links.filter(l=>l[0]===u.id).forEach(l=>{const c=cr.get(l[1])||{d:0,n:0};c.d+=l[2];c.n++;cr.set(l[1],c)}));
   document.querySelector('#cr tbody').innerHTML=[...cr].sort((a,b)=>b[1].d-a[1].d).slice(0,20)
-   .map(([id,c])=>{const L=(cMap.get(id)?.locked||[]).filter(x=>base.some(u=>u.id===x));return `<tr data-id="${esc(id)}" tabindex="0"><td>${esc(id)}</td><td class="r num">${fmt(c.d)}</td><td class="r num">${c.n}</td><td>${L.length?esc(L.join('、')):'—'}</td></tr>`}).join('');
+   .map(([id,c])=>{const L=(cMap.get(id)?.locked||[]).filter(x=>base.some(u=>u.id===x));return `<tr data-id="${esc(id)}" tabindex="0"><td class="cn">${esc(id)}</td><td class="r num">${fmt(c.d)}</td><td class="r num">${c.n}</td><td>${L.length?esc(L.join('、')):'—'}</td></tr>`}).join('');
   bindRows('#watch tr[data-id],#cr tr[data-id]');
 }
 document.querySelector('#evt tbody').innerHTML=U.filter(u=>u.ev.some(e=>e!=='sepreg')).sort((a,b)=>b.d-a.d)
- .map(u=>`<tr data-id="${esc(u.id)}" tabindex="0"><td>${esc(u.id)}</td><td>${evText(u)}</td><td class="r num">${u.lv??'—'}</td><td class="r num">${u.slv??'—'}</td>
- <td class="r num">${fmt(u.d)}</td><td>${spark(u.m)}</td><td>${esc(u.top??'—')}</td><td><span class="pill ${u.sig}">${SIG[u.sig]}</span></td></tr>`).join('');
+ .map(u=>`<tr data-id="${esc(u.id)}" tabindex="0"><td class="un">${esc(u.id)}</td><td>${evText(u)}</td><td class="r num">${u.lv??'—'}</td><td class="r num">${u.slv??'—'}</td>
+ <td class="r num">${fmt(u.d)}</td><td>${spark(u.m)}</td><td class="cn">${esc(u.top??'—')}</td><td><span class="pill ${u.sig}">${SIG[u.sig]}</span></td></tr>`).join('');
 bindRows('#evt tr[data-id]');
-document.querySelector('#old tbody').innerHTML=OLD.map(([u,tag,m,a,s])=>`<tr style="cursor:default"><td>${esc(u)}</td><td>${esc(tag)}</td><td>${spark(m)}</td>
+document.querySelector('#old tbody').innerHTML=OLD.map(([u,tag,m,a,s])=>`<tr style="cursor:default"><td class="un">${esc(u)}</td><td>${esc(tag)}</td><td>${spark(m)}</td>
  <td class="r num">${fmt(m[5])}</td><td class="r num">${a[5]}</td><td>${esc(s)}</td></tr>`).join('');
 render();
 }
