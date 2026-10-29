@@ -1,14 +1,403 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>情感線熱點報告系統</title>
-    <!-- 這裡會自動引入 Tailwind CSS 與 Google Fonts -->
-  </head>
-  <body class="bg-[#f8faff] antialiased">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>VIP 感情熱點圖</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: summary strip → relationship graph with side detail → watchlist tables → tracking of the old map */
+:root{
+  --bg:#f6f7fb; --panel:#ffffff; --ink:#1d2333; --muted:#677089; --line:#e2e5ee;
+  --accent:#c2375f; --accent-soft:#f7dde5; --creator:#3b4a8f;
+  --red:#d6453d; --amber:#d99a1e; --green:#2f9e6e; --flat:#9aa3b8;
+  --red-soft:#fbe4e2; --amber-soft:#fbf0d9; --green-soft:#dcf2e8;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12151d; --panel:#1a1e29; --ink:#e6e9f2; --muted:#9099b0; --line:#2b3140;
+  --accent:#ef6f93; --accent-soft:#3a2230; --creator:#93a2f2;
+  --red:#f0665d; --amber:#f0b545; --green:#4cc28f; --flat:#6b7489;
+  --red-soft:#3b2120; --amber-soft:#3a2f17; --green-soft:#183429; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12151d; --panel:#1a1e29; --ink:#e6e9f2; --muted:#9099b0; --line:#2b3140;
+  --accent:#ef6f93; --accent-soft:#3a2230; --creator:#93a2f2;
+  --red:#f0665d; --amber:#f0b545; --green:#4cc28f; --flat:#6b7489;
+  --red-soft:#3b2120; --amber-soft:#3a2f17; --green-soft:#183429; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.6}
+.wrap{max-width:1180px;margin:0 auto;padding-block:28px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:28px}
+h1{font-size:28px;font-weight:900;letter-spacing:.02em;margin:0;text-wrap:balance}
+h2{font-size:17px;font-weight:700;margin:0;text-wrap:balance}
+.eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-family:var(--f-mono)}
+.sub{color:var(--muted);margin:4px 0 0;max-width:68ch}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.tile b{display:block;font-size:24px;font-family:var(--f-mono);font-weight:500}
+.tile span{color:var(--muted);font-size:12px}
+.tile.red b{color:var(--red)} .tile.amber b{color:var(--amber)} .tile.green b{color:var(--green)}
+.graphbox{align-items:start;display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px}
+@media (max-width:860px){.graphbox{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;min-width:0}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+.filters{display:flex;flex-wrap:wrap;gap:10px 16px;padding:12px 14px;border-bottom:1px solid var(--line);align-items:end}
+.filters label{display:grid;gap:3px;font-size:11px;color:var(--muted)}
+.filters select{font:inherit;font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:5px 8px}
+.filters select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.count{margin-left:auto;font-size:12px;color:var(--muted)}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:4px;background:var(--bg);border:1px solid var(--line);color:var(--muted);margin-right:4px}
+.chip{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:4px 12px;font:inherit;font-size:12px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.chip:focus-visible,input:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input#q{flex:1 1 160px;min-width:0;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:6px 10px;font:inherit}
+#graph{width:100%;height:600px;display:block;touch-action:none;cursor:grab}
+#graph text{font-size:10px;fill:var(--muted);pointer-events:none;font-family:var(--f-body)}
+#graph text.c{font-size:11px;fill:var(--creator);font-weight:700}
+#graph text.u{fill:var(--accent);font-weight:500}
+.cn{color:var(--creator);font-weight:600}
+.un{color:var(--accent);font-weight:500}
+.rel{display:grid;gap:10px}
+.rel div{border-top:1px solid var(--line);padding-top:8px;display:grid;gap:3px}
+.rel .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.rel p{margin:0;font-size:12px;color:var(--muted);line-height:1.55}
+.rel .meta{font-size:12px;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;padding:10px 14px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+#detail{padding:16px;display:grid;gap:12px;align-content:start}
+#detail .empty{color:var(--muted)}
+.pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;font-weight:500}
+.pill.red{background:var(--red-soft);color:var(--red)} .pill.amber{background:var(--amber-soft);color:var(--amber)}
+.pill.green{background:var(--green-soft);color:var(--green)} .pill.flat{background:var(--bg);color:var(--muted);border:1px solid var(--line)}
+.pill.arch{background:var(--accent-soft);color:var(--accent)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px}
+.kv dt{color:var(--muted)} .kv dd{margin:0;text-align:right}
+.bars{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;align-items:end;height:90px}
+.bars div{display:grid;gap:3px;align-content:end;text-align:center;font-size:11px;color:var(--muted);height:100%}
+.bars i{display:block;background:var(--accent);border-radius:3px 3px 0 0;min-height:2px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{font-size:11px;color:var(--muted);font-weight:500;text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+td.r,th.r{text-align:right}
+tbody tr{cursor:pointer} tbody tr:hover{background:var(--bg)}
+.spark{display:inline-flex;gap:2px;align-items:end;height:22px;vertical-align:middle}
+.spark i{display:block;width:7px;background:var(--flat);border-radius:1px}
+.spark i:last-child{background:var(--accent)}
+.sev{border-left:3px solid transparent}
+.sev.red{border-left-color:var(--red)} .sev.amber{border-left-color:var(--amber)}
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.notes .card{padding:14px 16px}
+.notes p{margin:6px 0 0;color:var(--muted);font-size:13px}
+.head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:end}
+.section{display:grid;gap:12px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+html,body{margin:0}
+body{-webkit-font-smoothing:antialiased}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+.lock{min-height:100vh;display:grid;place-items:center;padding-block:24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.lock form{width:100%;max-width:380px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:28px 24px;display:grid;gap:14px}
+.lock h1{font-size:22px}
+.lock input{font:inherit;font-size:15px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;letter-spacing:.04em}
+.lock input:focus-visible,.lock button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.lock button{font:inherit;font-weight:700;color:#fff;background:var(--accent);border:0;border-radius:8px;padding:10px 12px;cursor:pointer}
+.lock button[disabled]{opacity:.6;cursor:progress}
+.lock .err{color:var(--red);font-size:13px;margin:0;min-height:1.2em}
+.lock .hint{color:var(--muted);font-size:12px;margin:0}
+</style>
+</head>
+<body>
+<div class="lock" id="lock">
+  <form id="unlock" autocomplete="off">
+    <div class="eyebrow">SWAG.live · VIP</div>
+    <h1>VIP 感情熱點圖</h1>
+    <p class="hint">資料已加密。請輸入 OPS 提供的密碼解鎖，密碼只在這台裝置的瀏覽器裡用來解密，不會傳到任何伺服器。</p>
+    <label for="pw" class="hint">密碼</label>
+    <input id="pw" type="password" autocomplete="current-password" required>
+    <button id="go" type="submit">解鎖</button>
+    <p class="err" id="err" role="alert"></p>
+  </form>
+</div>
+<div class="wrap" id="app" hidden>
+  <header class="head">
+    <div>
+      <div class="eyebrow">SWAG.live · VIP · Mixpanel 4020883</div>
+      <h1>VIP 感情熱點圖</h1>
+      <p class="sub">資料期間 2026/8/1–10/28。名單包含 Lv.50 以上、期間內有送禮或私訊的用戶，以及 7 月、9 月 VIP 同樂會的到場者；已排除內部、高風險、主播帳號。用上方篩選縮小範圍，點節點看細節。</p>
+    </div>
+    <div class="eyebrow">更新於 2026/10/29</div>
+  </header>
+
+  <div class="tiles" id="tiles"></div>
+
+  <section class="graphbox">
+    <div class="card">
+      <div class="filters">
+        <label for="f-lv">等級（Mixpanel vip_level）
+          <select id="f-lv">
+            <option value="all">全部等級</option>
+            <option value="50">Lv.50–59</option>
+            <option value="60">Lv.60–69</option>
+            <option value="70" selected>Lv.70 以上</option>
+            <option value="60up">Lv.60 以上</option>
+            <option value="50up">Lv.50 以上</option>
+            <option value="u50">未滿 Lv.50</option>
+          </select>
+        </label>
+        <label for="f-ev">活動場次
+          <select id="f-ev">
+            <option value="all">不限</option>
+            <option value="any">有到場任一場同樂會</option>
+            <option value="jul">7/26 同樂會到場</option>
+            <option value="sep">9/19 同樂會到場</option>
+            <option value="none">沒參加過</option>
+          </select>
+        </label>
+        <label for="f-min">連線門檻
+          <select id="f-min">
+            <option value="100000">10 萬鑽以上</option>
+            <option value="300000" selected>30 萬鑽以上</option>
+            <option value="1000000">100 萬鑽以上</option>
+          </select>
+        </label>
+        <span class="count" id="count"></span>
+      </div>
+      <div class="toolbar">
+        <button class="chip" data-f="all" aria-pressed="true" id="f-all">全部燈號</button>
+        <button class="chip" data-f="red" aria-pressed="false" id="f-red">🔴 真退坑</button>
+        <button class="chip" data-f="amber" aria-pressed="false" id="f-amber">🟡 預警</button>
+        <button class="chip" data-f="green" aria-pressed="false" id="f-green">🟢 升溫</button>
+        <button class="chip" data-f="lock" aria-pressed="false" id="f-lock">單點暈船</button>
+        <input id="q" type="search" placeholder="搜尋用戶或主播" aria-label="搜尋用戶或主播">
+      </div>
+      <svg id="graph" role="img" aria-label="用戶與主播送禮關係圖"></svg>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--creator)"></i><b class="cn">主播</b>（大小＝收到鑽石）</span><span><b class="un">用戶</b>（點的顏色＝燈號）</span>
+        <span><i class="dot" style="background:var(--red)"></i>真退坑</span>
+        <span><i class="dot" style="background:var(--amber)"></i>預警</span>
+        <span><i class="dot" style="background:var(--green)"></i>升溫／新進</span>
+        <span><i class="dot" style="background:var(--flat)"></i>穩定</span>
+        <span>沒有達門檻連線的用戶不畫在圖上，仍列在下方表格</span>
+      </div>
+    </div>
+    <aside class="card" id="detail" aria-live="polite"><p class="empty">點圖上的用戶或主播，這裡會顯示月走勢與主要關係。</p></aside>
+  </section>
+
+  <section class="section">
+    <div class="head"><h2>需要優先處理的用戶</h2><span class="sub">套用上方的等級與活動篩選</span></div>
+    <div class="card" style="padding:12px 16px"><div class="tbl"><table style="font-size:12px"><thead><tr><th></th><th>活躍度持平</th><th>活躍度下滑</th></tr></thead><tbody>
+      <tr style="cursor:default"><th>送禮持平</th><td>穩定</td><td><span class="pill amber">🟡 注意力先走</span>（90 天送禮 ≥ 30 萬鑽才算）</td></tr>
+      <tr style="cursor:default"><th>送禮下滑</th><td><span class="pill amber">🟡 錢包冷</span> 人還在，錢變少或流向別人</td><td><span class="pill red">🔴 真退坑</span></td></tr></tbody></table></div>
+      <p class="sub" style="font-size:12px;margin:8px 0 0">送禮下滑：8、9 月平均 ≥ 50 萬鑽，10 月（以 31/28 換算整月）不到平均的 60%。活躍度用「進入直播間」次數，10 月不到 8、9 月平均的一半算下滑，歸零算消失。升溫：10 月送禮 ≥ 100 萬鑽且超過平均 2 倍。</p></div>
+    <div class="card tbl"><table id="watch"><thead><tr><th>用戶</th><th>燈號</th><th>原型</th><th class="r">Lv</th><th class="r">90 天鑽石</th><th>送禮 8→9→10 月</th><th>進直播間 8→9→10 月</th><th>主要主播</th><th>指向轉移</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="section">
+    <div class="head"><h2>同樂會到場者</h2><span class="sub">7/26 與 9/19 到場名單（來源：報名表 Google Sheet），對照 8–10 月送禮</span></div>
+    <div class="card tbl"><table id="evt"><thead><tr><th>用戶</th><th>場次</th><th class="r">Mixpanel Lv</th><th class="r">報名表 Lv</th><th class="r">90 天鑽石</th><th>8→9→10 月</th><th>主要主播</th><th>燈號</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="section">
+    <div class="head"><h2>主播節點</h2><span class="sub">依名單內用戶送禮鑽石排序。「單點綁定」是 HHI ≥ 0.6、主要壓這位主播的用戶，是留存命門。</span></div>
+    <div class="card tbl"><table id="cr"><thead><tr><th>主播</th><th class="r">收到鑽石</th><th class="r">送禮用戶數</th><th>單點綁定用戶</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="section">
+    <div class="head"><h2>舊名單追蹤</h2><span class="sub">4 月熱點圖與 7 月同樂會分析中出現過的用戶，不限等級，5–10 月送禮</span></div>
+    <div class="card tbl"><table id="old"><thead><tr><th>用戶</th><th>當時標記</th><th>5–10 月送禮</th><th class="r">10 月鑽石</th><th class="r">10 月活躍事件</th><th>現況</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="notes">
+    <div class="card"><h2>等級對不起來</h2><p>Mixpanel 的 vip_level 和報名表上的等級常常不同，有用戶報名表是 Lv.73、Mixpanel 卻是 0。篩選用的是 Mixpanel 等級，報名表等級列在同樂會表格裡。</p></div>
+    <div class="card"><h2>高消費和同樂會幾乎不重疊</h2><p>Lv.50+ 名單 98 人中，只有 2 人到過 7 月或 9 月同樂會。到場者 55 人中，90 天送禮超過 100 萬鑽的只有 7 人。</p></div>
+    <div class="card"><h2>訊號來源</h2><p>燈號結合送禮鑽石與進入直播間次數；關係鏈文字依送禮與私訊的月走勢自動產生，沒有讀私訊內容。女神聚會邀約、訂製徽章、冠名不在 Mixpanel。撒網型是否為特權獵手，需要特權使用紀錄才能判定。</p></div>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script>
+// Decrypts data.enc.json in the browser: PBKDF2-SHA256 -> AES-256-GCM (see scripts/encrypt-data.mjs).
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function decrypt(pass){
+  const res=await fetch('data.enc.json',{cache:'no-store'});
+  if(!res.ok)throw new Error('load');
+  const e=await res.json();
+  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']);
+  const key=await crypto.subtle.deriveKey({name:'PBKDF2',hash:'SHA-256',salt:unb64(e.salt),iterations:e.iterations},base,{name:'AES-GCM',length:256},false,['decrypt']);
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(e.iv)},key,unb64(e.ct));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+document.getElementById('unlock').addEventListener('submit',async ev=>{
+  ev.preventDefault();
+  const btn=document.getElementById('go'),err=document.getElementById('err'),pw=document.getElementById('pw');
+  btn.disabled=true;btn.textContent='解鎖中…';err.textContent='';
+  try{
+    const {DATA,OLD}=await decrypt(pw.value);
+    pw.value='';
+    document.getElementById('lock').remove();
+    document.getElementById('app').hidden=false;
+    start(DATA,OLD);
+  }catch(x){
+    err.textContent=x.message==='load'?'資料檔讀取失敗，請重新整理再試。':'密碼不對，請再試一次。';
+    btn.disabled=false;btn.textContent='解鎖';pw.select();
+  }
+});
+function start(DATA,OLD){
+const fmt=n=>n==null?'—':n>=1e6?(n/1e6).toFixed(n>=1e7?1:2)+'M':n>=1e3?Math.round(n/1e3)+'K':String(n);
+const SIG={red:'真退坑',amber:'預警',green:'升溫',flat:'穩定'};
+const EVN={jul:'7/26',sep:'9/19',sepreg:'9/19 報名（未確認到場）'};
+const U=DATA.users;
+const uMap=new Map(U.map(u=>[u.id,u])), cMap=new Map(DATA.creators.map(c=>[c.id,c]));
+const esc=s=>String(s).replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+const $=id=>document.getElementById(id);
+
+// filter state
+const st={lv:'70',ev:'all',min:3e5,sig:'all',q:''};
+function lvOk(u){const l=u.lv;if(st.lv==='all')return true;if(l==null)return false;
+  return {50:l>=50&&l<60,60:l>=60&&l<70,70:l>=70,'60up':l>=60,'50up':l>=50,u50:l<50}[st.lv];}
+function evOk(u){const e=u.ev.filter(x=>x!=='sepreg');
+  return st.ev==='all'||(st.ev==='any'?e.length>0:st.ev==='none'?e.length===0:e.includes(st.ev));}
+const baseOk=u=>lvOk(u)&&evOk(u);
+const sigOk=u=>st.sig==='all'||(st.sig==='lock'?u.a==='單點暈船大戶':u.sig===st.sig);
+
+// tiles
+function tiles(list){
+  const tot=list.reduce((a,u)=>a+u.d,0),cnt=k=>list.filter(u=>u.sig===k).length;
+  $('tiles').innerHTML=[['',list.length,'篩選後用戶'],['',fmt(tot),'90 天送禮鑽石'],
+   ['red',cnt('red'),'🔴 真退坑（送禮＋活躍都掉）'],['amber',cnt('amber'),'🟡 預警（錢包冷／注意力先走）'],
+   ['green',cnt('green'),'🟢 升溫／新進'],['',list.filter(u=>u.a==='單點暈船大戶').length,'單點暈船大戶']]
+   .map(([c,b,s])=>`<div class="tile ${c}"><b>${b}</b><span>${s}</span></div>`).join('');
+}
+
+// graph
+const svg=d3.select('#graph'), g=svg.append('g'), box=$('graph');
+const zoom=d3.zoom().scaleExtent([.3,6]).on('zoom',e=>g.attr('transform',e.transform));
+svg.call(zoom);
+let link,node,label,nodes=[],links=[],rC,rU;
+const r=n=>n.type==='c'?rC(n.d):rU(n.d);
+function draw(){
+  link.attr('x1',l=>l.source.x).attr('y1',l=>l.source.y).attr('x2',l=>l.target.x).attr('y2',l=>l.target.y);
+  node.attr('cx',d=>d.x).attr('cy',d=>d.y);
+  label.attr('x',d=>d.x).attr('y',d=>d.y-r(d)-3);
+}
+function fit(){
+  if(!nodes.length)return;
+  const W=box.clientWidth,H=box.clientHeight,xs=d3.extent(nodes,n=>n.x),ys=d3.extent(nodes,n=>n.y);
+  const k=Math.min(2.2,W/(xs[1]-xs[0]+80),H/(ys[1]-ys[0]+80));
+  svg.call(zoom.transform,d3.zoomIdentity.translate(W/2-k*(xs[0]+xs[1])/2,H/2-k*(ys[0]+ys[1])/2).scale(k));
+}
+function render(){
+  const us=U.filter(u=>baseOk(u)&&sigOk(u));
+  const keep=new Set(us.map(u=>u.id));
+  const raw=DATA.links.filter(l=>keep.has(l[0])&&l[2]>=st.min);
+  const cd=new Map(); raw.forEach(l=>cd.set(l[1],(cd.get(l[1])||0)+l[2]));
+  const ud=new Set(raw.map(l=>l[0]));
+  nodes=[...[...cd].map(([id,d])=>({id,type:'c',d})),...us.filter(u=>ud.has(u.id)).map(u=>({id:u.id,type:'u',d:u.d,sig:u.sig}))];
+  links=raw.map(([s,t,v,c,tx])=>({source:s,target:t,v,c,t:tx}));
+  rC=d3.scaleSqrt().domain([0,d3.max(nodes.filter(n=>n.type==='c'),n=>n.d)||1]).range([5,26]);
+  rU=d3.scaleSqrt().domain([0,d3.max(nodes.filter(n=>n.type==='u'),n=>n.d)||1]).range([4,15]);
+  const w=d3.scaleSqrt().domain([st.min,d3.max(links,l=>l.v)||st.min+1]).range([.8,7]);
+  g.selectAll('*').remove();
+  link=g.append('g').selectAll('line').data(links).join('line').attr('stroke','var(--flat)').attr('stroke-opacity',.5).attr('stroke-width',l=>w(l.v));
+  node=g.append('g').selectAll('circle').data(nodes).join('circle').attr('r',r).attr('fill',n=>n.type==='c'?'var(--creator)':`var(--${n.sig})`)
+    .attr('stroke','var(--panel)').attr('stroke-width',1.2).style('cursor','pointer').attr('tabindex',0)
+    .on('click',(e,d)=>select(d.id)).on('keydown',(e,d)=>{if(e.key==='Enter')select(d.id)});
+  node.append('title').text(d=>`${d.id} · ${fmt(d.d)}`);
+  link.append('title').text(l=>`${l.source.id} → ${l.target.id}\n${l.t||''}`);
+  const many=nodes.length>80;
+  label=g.append('g').selectAll('text').data(nodes.filter(n=>!many||n.type==='c'&&n.d>=5e6||n.type==='u'&&n.d>=1.5e7)).join('text')
+    .attr('class',d=>d.type==='c'?'c':'u').attr('text-anchor','middle').text(d=>d.id);
+  node.call(d3.drag().on('drag',(e,d)=>{d.x=e.x;d.y=e.y;draw();}));
+  const sim=d3.forceSimulation(nodes).force('link',d3.forceLink(links).id(d=>d.id).distance(50).strength(.5))
+    .force('charge',d3.forceManyBody().strength(many?-45:-120)).force('collide',d3.forceCollide(d=>r(d)+(many?2:10)))
+    .force('x',d3.forceX(0).strength(.06)).force('y',d3.forceY(0).strength(.06)).stop();
+  for(let i=0;i<320;i++)sim.tick();
+  draw(); fit(); applyHL(); tables();
+  const all=U.filter(baseOk);
+  tiles(all);
+  $('count').textContent=nodes.length?`圖上 ${nodes.filter(n=>n.type==='u').length} 位用戶、${cd.size} 位主播`:'沒有符合的用戶，試著放寬等級或連線門檻';
+}
+let hl=null;
+function neighbors(id){const s=new Set([id]);links.forEach(l=>{if(l.source.id===id)s.add(l.target.id);if(l.target.id===id)s.add(l.source.id)});return s}
+function applyHL(){
+  let keep=null;
+  if(hl)keep=neighbors(hl);
+  else if(st.q){keep=new Set();nodes.forEach(n=>{if(n.id.includes(st.q))neighbors(n.id).forEach(x=>keep.add(x))});}
+  node.attr('opacity',d=>!keep||keep.has(d.id)?1:.12);
+  label.attr('opacity',d=>!keep||keep.has(d.id)?1:.1);
+  link.attr('stroke-opacity',l=>!keep||(keep.has(l.source.id)&&keep.has(l.target.id))?.55:.04);
+}
+addEventListener('resize',fit);
+svg.on('click',e=>{if(e.target===box){hl=null;applyHL();}});
+$('f-lv').addEventListener('change',e=>{st.lv=e.target.value;hl=null;render();});
+$('f-ev').addEventListener('change',e=>{st.ev=e.target.value;hl=null;render();});
+$('f-min').addEventListener('change',e=>{st.min=+e.target.value;hl=null;render();});
+document.querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{
+  st.sig=b.dataset.f;document.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',x===b));hl=null;render();}));
+$('q').addEventListener('input',e=>{st.q=e.target.value.trim();applyHL();});
+
+// detail
+const det=$('detail');
+const bars=(vals,labels)=>{const m=Math.max(...vals,1);return `<div class="bars">${vals.map((v,i)=>`<div><span class="num">${fmt(v)}</span><i style="height:${Math.max(2,v/m*60)}px"></i>${labels[i]}</div>`).join('')}</div>`};
+const evText=u=>u.ev.length?u.ev.map(e=>`<span class="tag">${EVN[e]}</span>`).join(''):'—';
+function select(id){
+  hl=id; if(node)applyHL();
+  const u=uMap.get(id);
+  if(u){
+    det.innerHTML=`<div><div class="eyebrow">用戶</div><h2 class="un">${esc(u.id)}</h2>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><span class="pill ${u.sig}">${esc(u.sl)}</span><span class="pill arch">${esc(u.a)}</span></div></div>
+      <dl class="kv"><dt>Mixpanel 等級</dt><dd class="num">${u.lv??'—'}</dd>${u.slv!=null?`<dt>報名表等級</dt><dd class="num">${u.slv}</dd>`:''}
+      <dt>同樂會</dt><dd>${evText(u)}</dd>
+      <dt>90 天送禮</dt><dd class="num">${fmt(u.d)} 鑽</dd><dt>送禮次數</dt><dd class="num">${u.g}</dd>
+      <dt>私訊則數</dt><dd class="num">${u.c}</dd><dt>送禮主播數</dt><dd class="num">${u.nc}</dd>
+      <dt>HHI（鑽石）</dt><dd class="num">${u.hhi??'—'}</dd><dt>主要主播</dt><dd class="cn">${esc(u.top??'—')} ${u.ts?`<span class="num">(${Math.round(u.ts*100)}%)</span>`:''}</dd>
+      ${u.mig?`<dt>指向轉移</dt><dd>${esc(u.mig)}</dd>`:''}</dl>
+      <div><div class="eyebrow">送禮鑽石（8／9／10 月）</div>${bars(u.m,['8月','9月','10月*'])}</div>
+      <div><div class="eyebrow">進直播間次數（8／9／10 月）</div>${bars(u.act,['8月','9月','10月*'])}</div>
+      <div><div class="eyebrow">私訊則數（8／9／10 月）</div>${bars(u.cm,['8月','9月','10月*'])}</div>
+      ${u.p.length?`<div><div class="eyebrow">關係鏈</div><div class="rel">${u.p.map(([t,v,c,tx])=>`<div><div class="top"><a href="#" class="cn" data-go="${esc(t)}">${esc(t)}</a><span class="meta num">${fmt(v)} 鑽 · 私訊 ${c??'—'}</span></div><p>${esc(tx||'')}</p></div>`).join('')}</div></div>`:''}
+      <p class="sub" style="font-size:12px">* 10 月資料至 10/28${u.src==='event'?'；同樂會名單的私訊沒有拆到主播':''}${u.partial?'；主播明細不完整（小額未列）':''}</p>`;
+  } else {
+    const fans=links.filter(l=>l.target.id===id).sort((a,b)=>b.v-a.v);
+    const c=cMap.get(id)||{locked:[]};
+    det.innerHTML=`<div><div class="eyebrow">主播</div><h2 class="cn">${esc(id)}</h2></div>
+      <dl class="kv"><dt>圖上收到鑽石</dt><dd class="num">${fmt(fans.reduce((a,l)=>a+l.v,0))} 鑽</dd><dt>圖上送禮用戶</dt><dd class="num">${fans.length}</dd>
+      <dt>單點綁定</dt><dd>${c.locked.length?esc(c.locked.join('、')):'—'}</dd></dl>
+      <div><div class="eyebrow">關係鏈</div><div class="rel">${fans.map(l=>{const u=uMap.get(l.source.id);return `<div><div class="top"><a href="#" class="un" data-go="${esc(u.id)}">${esc(u.id)}</a><span class="meta"><span class="num">${fmt(l.v)} 鑽 · Lv ${u.lv??'—'}</span> <span class="pill ${u.sig}">${SIG[u.sig]}</span></span></div><p>${esc(l.t||'')}</p></div>`}).join('')}</div></div>`;
+  }
+  det.querySelectorAll('[data-go]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();select(a.dataset.go)}));
+}
+
+// tables
+const spark=v=>{const m=Math.max(...v,1);return `<span class="spark">${v.map(x=>`<i style="height:${Math.max(2,x/m*22)}px"></i>`).join('')}</span>`};
+const order={red:0,amber:1};
+function bindRows(sel){document.querySelectorAll(sel).forEach(tr=>{
+  const go=()=>{select(tr.dataset.id);box.scrollIntoView({behavior:'smooth',block:'center'})};
+  tr.addEventListener('click',go);tr.addEventListener('keydown',e=>{if(e.key==='Enter')go()});});}
+function tables(){
+  const base=U.filter(baseOk);
+  const w=base.filter(u=>u.sig==='red'||u.sig==='amber').sort((a,b)=>order[a.sig]-order[b.sig]||b.d-a.d);
+  document.querySelector('#watch tbody').innerHTML=w.length?w.map(u=>`<tr class="sev ${u.sig}" data-id="${esc(u.id)}" tabindex="0"><td class="un">${esc(u.id)}</td><td><span class="pill ${u.sig}">${esc(u.sl.slice(2))}</span></td><td>${esc(u.a)}</td>
+   <td class="r num">${u.lv??'—'}</td><td class="r num">${fmt(u.d)}</td><td>${spark(u.m)} <span class="num" style="font-size:11px;color:var(--muted)">${u.m.map(fmt).join(' → ')}</span></td><td>${spark(u.act)} <span class="num" style="font-size:11px;color:var(--muted)">${u.act.join(' → ')}</span></td><td class="cn">${esc(u.top??'—')}</td><td>${esc(u.mig||'—')}</td></tr>`).join('')
+   :`<tr><td colspan="9" style="color:var(--muted)">這個篩選範圍內沒有真退坑或預警的用戶。</td></tr>`;
+  const cr=new Map();
+  base.forEach(u=>DATA.links.filter(l=>l[0]===u.id).forEach(l=>{const c=cr.get(l[1])||{d:0,n:0};c.d+=l[2];c.n++;cr.set(l[1],c)}));
+  document.querySelector('#cr tbody').innerHTML=[...cr].sort((a,b)=>b[1].d-a[1].d).slice(0,20)
+   .map(([id,c])=>{const L=(cMap.get(id)?.locked||[]).filter(x=>base.some(u=>u.id===x));return `<tr data-id="${esc(id)}" tabindex="0"><td class="cn">${esc(id)}</td><td class="r num">${fmt(c.d)}</td><td class="r num">${c.n}</td><td>${L.length?esc(L.join('、')):'—'}</td></tr>`}).join('');
+  bindRows('#watch tr[data-id],#cr tr[data-id]');
+}
+document.querySelector('#evt tbody').innerHTML=U.filter(u=>u.ev.some(e=>e!=='sepreg')).sort((a,b)=>b.d-a.d)
+ .map(u=>`<tr data-id="${esc(u.id)}" tabindex="0"><td class="un">${esc(u.id)}</td><td>${evText(u)}</td><td class="r num">${u.lv??'—'}</td><td class="r num">${u.slv??'—'}</td>
+ <td class="r num">${fmt(u.d)}</td><td>${spark(u.m)}</td><td class="cn">${esc(u.top??'—')}</td><td><span class="pill ${u.sig}">${SIG[u.sig]}</span></td></tr>`).join('');
+bindRows('#evt tr[data-id]');
+document.querySelector('#old tbody').innerHTML=OLD.map(([u,tag,m,a,s])=>`<tr style="cursor:default"><td class="un">${esc(u)}</td><td>${esc(tag)}</td><td>${spark(m)}</td>
+ <td class="r num">${fmt(m[5])}</td><td class="r num">${a[5]}</td><td>${esc(s)}</td></tr>`).join('');
+render();
+}
+</script>
+</body>
 </html>
