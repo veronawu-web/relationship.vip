@@ -64,6 +64,17 @@ input#q{flex:1 1 160px;min-width:0;border:1px solid var(--line);background:var(-
 .rel .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
 .rel p{margin:0;font-size:12px;color:var(--muted);line-height:1.55}
 .rel .meta{font-size:12px;color:var(--muted)}
+.rd{display:inline-flex;gap:3px;vertical-align:middle}
+.rd i{display:block;width:9px;height:9px;border-radius:2px;background:var(--line)}
+.rd.l1 i:nth-child(1),.rd.l2 i:nth-child(-n+2){background:var(--amber)}
+.rd.l3 i{background:var(--red)}
+.msum{background:var(--bg);border-radius:8px;padding:8px 10px;display:grid;gap:4px;font-size:12px}
+.rel .msum{border-top:0;padding:8px 10px}
+.rel .msum div{border-top:0;padding-top:0;display:block}
+.msum q{color:var(--ink);quotes:"「" "」"}
+.msum .act{color:var(--ink)}
+#radar td{font-size:12px}
+#radar td p{margin:0}
 .legend{display:flex;flex-wrap:wrap;gap:14px;padding:10px 14px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
 #detail{padding:16px;display:grid;gap:12px;align-content:start}
@@ -181,7 +192,7 @@ body{-webkit-font-smoothing:antialiased}
         <span><i class="dot" style="background:var(--amber)"></i>預警</span>
         <span><i class="dot" style="background:var(--green)"></i>升溫／新進</span>
         <span><i class="dot" style="background:var(--flat)"></i>穩定</span>
-        <span>沒有達門檻連線的用戶不畫在圖上，仍列在下方表格</span>
+        <span>虛線＝分手雷達冷卻中（黃）或已在分手（紅）</span><span>沒有達門檻連線的用戶不畫在圖上，仍列在下方表格</span>
       </div>
     </div>
     <aside class="card" id="detail" aria-live="polite"><p class="empty">點圖上的用戶或主播，這裡會顯示月走勢與主要關係。</p></aside>
@@ -194,6 +205,25 @@ body{-webkit-font-smoothing:antialiased}
       <tr style="cursor:default"><th>送禮下滑</th><td><span class="pill amber">🟡 錢包冷</span> 人還在，錢變少或流向別人</td><td><span class="pill red">🔴 真退坑</span></td></tr></tbody></table></div>
       <p class="sub" style="font-size:12px;margin:8px 0 0">送禮下滑：8、9 月平均 ≥ 50 萬鑽，10 月（以 31/28 換算整月）不到平均的 60%。活躍度用「進入直播間」次數，10 月不到 8、9 月平均的一半算下滑，歸零算消失。升溫：10 月送禮 ≥ 100 萬鑽且超過平均 2 倍。</p></div>
     <div class="card tbl"><table id="watch"><thead><tr><th>用戶</th><th>燈號</th><th>原型</th><th class="r">Lv</th><th class="r">90 天鑽石</th><th>送禮 8→9→10 月</th><th>進直播間 8→9→10 月</th><th>主要主播</th><th>指向轉移</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="section">
+    <div class="head"><h2>分手雷達</h2><span class="sub">讀 9–10 月雙向私訊內容判斷，套用上方等級與活動篩選。關係鏈的總結與建議由 AI 依 VIP 判讀規則產生，用來排優先順序，處理前請再確認原始對話。</span></div>
+    <div class="filters card" style="border-bottom:0">
+      <label for="f-rd">風險等級
+        <select id="f-rd"><option value="2" selected>冷卻中以上（2–3）</option><option value="3">只看已在分手（3）</option><option value="1">有摩擦以上（1–3）</option><option value="0">全部</option></select>
+      </label>
+      <label for="f-ini">誰先退
+        <select id="f-ini"><option value="all">不限</option><option value="streamer">主播端</option><option value="user">用戶端</option><option value="mutual">雙方</option></select>
+      </label>
+      <span class="count" id="rcount"></span>
+    </div>
+    <div class="card tbl"><table id="radar"><thead><tr><th>關係鏈</th><th>雷達</th><th>誰先退</th><th>氣氛</th><th class="r">私訊 9→10 月</th><th>內容總結</th><th>建議</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="section">
+    <div class="head"><h2>換帳號偵測</h2><span class="sub">用 FingerprintJS 裝置 ID（fpjs.visitorId）找共用裝置的帳號，再對照新帳號是否送同一位主播。只檢查真退坑與重點用戶，一個裝置被很多帳號用過時可信度較低。</span></div>
+    <div class="card tbl"><table id="alts"><thead><tr><th>用戶</th><th>可信度</th><th>可能同一人</th><th>判讀</th></tr></thead><tbody></tbody></table></div>
   </section>
 
   <section class="section">
@@ -214,7 +244,7 @@ body{-webkit-font-smoothing:antialiased}
   <section class="notes">
     <div class="card"><h2>等級對不起來</h2><p>Mixpanel 的 vip_level 和報名表上的等級常常不同，有用戶報名表是 Lv.73、Mixpanel 卻是 0。篩選用的是 Mixpanel 等級，報名表等級列在同樂會表格裡。</p></div>
     <div class="card"><h2>高消費和同樂會幾乎不重疊</h2><p>Lv.50+ 名單 98 人中，只有 2 人到過 7 月或 9 月同樂會。到場者 55 人中，90 天送禮超過 100 萬鑽的只有 7 人。</p></div>
-    <div class="card"><h2>訊號來源</h2><p>燈號結合送禮鑽石與進入直播間次數；關係鏈文字依送禮與私訊的月走勢自動產生，沒有讀私訊內容。女神聚會邀約、訂製徽章、冠名不在 Mixpanel。撒網型是否為特權獵手，需要特權使用紀錄才能判定。</p></div>
+    <div class="card"><h2>訊號來源</h2><p>燈號結合送禮鑽石與進入直播間次數；關係鏈文字依送禮與私訊的月走勢自動產生。分手雷達與內容總結讀的是 9–10 月雙向私訊，涵蓋重點關係鏈，不是全部。女神聚會邀約、訂製徽章、冠名不在 Mixpanel。撒網型是否為特權獵手，需要特權使用紀錄才能判定。</p></div>
   </section>
 </div>
 
@@ -268,7 +298,7 @@ const sigOk=u=>st.sig==='all'||(st.sig==='lock'?u.a==='單點暈船大戶':u.sig
 function tiles(list){
   const tot=list.reduce((a,u)=>a+u.d,0),cnt=k=>list.filter(u=>u.sig===k).length;
   $('tiles').innerHTML=[['',list.length,'篩選後用戶'],['',fmt(tot),'90 天送禮鑽石'],
-   ['red',cnt('red'),'🔴 真退坑（送禮＋活躍都掉）'],['amber',cnt('amber'),'🟡 預警（錢包冷／注意力先走）'],
+   ['red',cnt('red'),'🔴 真退坑（送禮＋活躍都掉）'],['amber',cnt('amber'),'🟡 預警（錢包冷／注意力先走／換帳號）'],
    ['green',cnt('green'),'🟢 升溫／新進'],['',list.filter(u=>u.a==='單點暈船大戶').length,'單點暈船大戶']]
    .map(([c,b,s])=>`<div class="tile ${c}"><b>${b}</b><span>${s}</span></div>`).join('');
 }
@@ -297,12 +327,12 @@ function render(){
   const cd=new Map(); raw.forEach(l=>cd.set(l[1],(cd.get(l[1])||0)+l[2]));
   const ud=new Set(raw.map(l=>l[0]));
   nodes=[...[...cd].map(([id,d])=>({id,type:'c',d})),...us.filter(u=>ud.has(u.id)).map(u=>({id:u.id,type:'u',d:u.d,sig:u.sig}))];
-  links=raw.map(([s,t,v,c,tx])=>({source:s,target:t,v,c,t:tx}));
+  links=raw.map(([s,t,v,c,tx])=>({source:s,target:t,v,c,t:tx,r:REL[s+'|'+t]}));
   rC=d3.scaleSqrt().domain([0,d3.max(nodes.filter(n=>n.type==='c'),n=>n.d)||1]).range([5,26]);
   rU=d3.scaleSqrt().domain([0,d3.max(nodes.filter(n=>n.type==='u'),n=>n.d)||1]).range([4,15]);
   const w=d3.scaleSqrt().domain([st.min,d3.max(links,l=>l.v)||st.min+1]).range([.8,7]);
   g.selectAll('*').remove();
-  link=g.append('g').selectAll('line').data(links).join('line').attr('stroke','var(--flat)').attr('stroke-opacity',.5).attr('stroke-width',l=>w(l.v));
+  link=g.append('g').selectAll('line').data(links).join('line').attr('stroke',l=>l.r&&l.r.radar>=3?'var(--red)':l.r&&l.r.radar===2?'var(--amber)':'var(--flat)').attr('stroke-dasharray',l=>l.r&&l.r.radar>=2?'5 3':null).attr('stroke-opacity',.5).attr('stroke-width',l=>w(l.v));
   node=g.append('g').selectAll('circle').data(nodes).join('circle').attr('r',r).attr('fill',n=>n.type==='c'?'var(--creator)':`var(--${n.sig})`)
     .attr('stroke','var(--panel)').attr('stroke-width',1.2).style('cursor','pointer').attr('tabindex',0)
     .on('click',(e,d)=>select(d.id)).on('keydown',(e,d)=>{if(e.key==='Enter')select(d.id)});
@@ -340,6 +370,28 @@ document.querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{
   st.sig=b.dataset.f;document.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',x===b));hl=null;render();}));
 $('q').addEventListener('input',e=>{st.q=e.target.value.trim();applyHL();});
 
+const REL=DATA.rel||{};
+const INI={streamer:'主播端',user:'用戶端',mutual:'雙方',none:'—'};
+const RDL=['穩定','有摩擦','冷卻中','已在分手'];
+const rdHTML=n=>`<span class="rd l${n}" title="${RDL[n]}"><i></i><i></i><i></i></span>`;
+function msum(r){if(!r)return '';if(r.no_messages)return '<div class="msum">9–10 月沒有雙向私訊。</div>';if(r.error)return '';
+  return `<div class="msum"><div>${rdHTML(r.radar)} <b>${RDL[r.radar]}</b>${r.radar>=2&&r.initiator!=='none'?` · ${INI[r.initiator]}先退`:''} · ${esc(r.tone||'')}</div>
+  <div>${esc(r.summary||'')}</div>${(r.quotes||[]).map(q=>`<div><q>${esc(q)}</q></div>`).join('')}
+  ${r.action?`<div class="act">建議：${esc(r.action)}</div>`:''}</div>`;}
+function radarTable(){
+  const lv=+$('f-rd').value, ini=$('f-ini').value;
+  const rows=Object.values(REL).filter(r=>!r.no_messages&&!r.error&&r.radar>=lv&&(ini==='all'||r.initiator===ini)&&uMap.has(r.user)&&baseOk(uMap.get(r.user)))
+    .sort((a,b)=>b.radar-a.radar||(uMap.get(b.user).d-uMap.get(a.user).d));
+  $('rcount').textContent=`${rows.length} 條關係鏈`;
+  document.querySelector('#radar tbody').innerHTML=rows.length?rows.map(r=>`<tr data-id="${esc(r.user)}" tabindex="0" class="sev ${r.radar>=3?'red':r.radar===2?'amber':''}">
+   <td><span class="un">${esc(r.user)}</span> → <span class="cn">${esc(r.streamer)}</span></td><td>${rdHTML(r.radar)}</td><td>${r.radar>=2?INI[r.initiator]||'—':'—'}</td><td>${esc(r.tone||'')}</td>
+   <td class="r num">用戶 ${r.msgs.user_to_streamer.join('→')}<br>主播 ${r.msgs.streamer_to_user.join('→')}</td>
+   <td><p>${esc(r.summary||'')}</p></td><td><p>${esc(r.action||'')}</p></td></tr>`).join('')
+   :`<tr><td colspan="7" style="color:var(--muted)">這個篩選範圍內沒有符合的關係鏈。</td></tr>`;
+  bindRows('#radar tr[data-id]');
+}
+$('f-rd').addEventListener('change',radarTable);$('f-ini').addEventListener('change',radarTable);
+
 // detail
 const det=$('detail');
 const bars=(vals,labels)=>{const m=Math.max(...vals,1);return `<div class="bars">${vals.map((v,i)=>`<div><span class="num">${fmt(v)}</span><i style="height:${Math.max(2,v/m*60)}px"></i>${labels[i]}</div>`).join('')}</div>`};
@@ -351,15 +403,16 @@ function select(id){
     det.innerHTML=`<div><div class="eyebrow">用戶</div><h2 class="un">${esc(u.id)}</h2>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><span class="pill ${u.sig}">${esc(u.sl)}</span><span class="pill arch">${esc(u.a)}</span></div></div>
       <dl class="kv"><dt>Mixpanel 等級</dt><dd class="num">${u.lv??'—'}</dd>${u.slv!=null?`<dt>報名表等級</dt><dd class="num">${u.slv}</dd>`:''}
-      <dt>同樂會</dt><dd>${evText(u)}</dd>
+      <dt>同樂會</dt><dd>${evText(u)}</dd>${u.alt&&u.alt.alts.length?`<dt>可能同一人</dt><dd>${u.alt.alts.map(a=>uMap.has(a)?`<a href="#" class="un" data-go="${esc(a)}">${esc(a)}</a>`:`<span class="un">${esc(a)}</span>`).join('、')} <span class="tag">${esc(u.alt.conf)}</span></dd>`:''}
       <dt>90 天送禮</dt><dd class="num">${fmt(u.d)} 鑽</dd><dt>送禮次數</dt><dd class="num">${u.g}</dd>
       <dt>私訊則數</dt><dd class="num">${u.c}</dd><dt>送禮主播數</dt><dd class="num">${u.nc}</dd>
       <dt>HHI（鑽石）</dt><dd class="num">${u.hhi??'—'}</dd><dt>主要主播</dt><dd class="cn">${esc(u.top??'—')} ${u.ts?`<span class="num">(${Math.round(u.ts*100)}%)</span>`:''}</dd>
       ${u.mig?`<dt>指向轉移</dt><dd>${esc(u.mig)}</dd>`:''}</dl>
+      ${u.alt?`<div class="msum"><b>裝置比對</b><div>${esc(u.alt.note)}</div></div>`:''}
       <div><div class="eyebrow">送禮鑽石（8／9／10 月）</div>${bars(u.m,['8月','9月','10月*'])}</div>
       <div><div class="eyebrow">進直播間次數（8／9／10 月）</div>${bars(u.act,['8月','9月','10月*'])}</div>
       <div><div class="eyebrow">私訊則數（8／9／10 月）</div>${bars(u.cm,['8月','9月','10月*'])}</div>
-      ${u.p.length?`<div><div class="eyebrow">關係鏈</div><div class="rel">${u.p.map(([t,v,c,tx])=>`<div><div class="top"><a href="#" class="cn" data-go="${esc(t)}">${esc(t)}</a><span class="meta num">${fmt(v)} 鑽 · 私訊 ${c??'—'}</span></div><p>${esc(tx||'')}</p></div>`).join('')}</div></div>`:''}
+      ${u.p.length?`<div><div class="eyebrow">關係鏈</div><div class="rel">${u.p.map(([t,v,c,tx])=>`<div><div class="top"><a href="#" class="cn" data-go="${esc(t)}">${esc(t)}</a><span class="meta num">${fmt(v)} 鑽 · 私訊 ${c??'—'}</span></div><p>${esc(tx||'')}</p>${msum(REL[u.id+'|'+t])}</div>`).join('')}</div></div>`:''}
       <p class="sub" style="font-size:12px">* 10 月資料至 10/28${u.src==='event'?'；同樂會名單的私訊沒有拆到主播':''}${u.partial?'；主播明細不完整（小額未列）':''}</p>`;
   } else {
     const fans=links.filter(l=>l.target.id===id).sort((a,b)=>b.v-a.v);
@@ -367,7 +420,7 @@ function select(id){
     det.innerHTML=`<div><div class="eyebrow">主播</div><h2 class="cn">${esc(id)}</h2></div>
       <dl class="kv"><dt>圖上收到鑽石</dt><dd class="num">${fmt(fans.reduce((a,l)=>a+l.v,0))} 鑽</dd><dt>圖上送禮用戶</dt><dd class="num">${fans.length}</dd>
       <dt>單點綁定</dt><dd>${c.locked.length?esc(c.locked.join('、')):'—'}</dd></dl>
-      <div><div class="eyebrow">關係鏈</div><div class="rel">${fans.map(l=>{const u=uMap.get(l.source.id);return `<div><div class="top"><a href="#" class="un" data-go="${esc(u.id)}">${esc(u.id)}</a><span class="meta"><span class="num">${fmt(l.v)} 鑽 · Lv ${u.lv??'—'}</span> <span class="pill ${u.sig}">${SIG[u.sig]}</span></span></div><p>${esc(l.t||'')}</p></div>`}).join('')}</div></div>`;
+      <div><div class="eyebrow">關係鏈</div><div class="rel">${fans.map(l=>{const u=uMap.get(l.source.id);return `<div><div class="top"><a href="#" class="un" data-go="${esc(u.id)}">${esc(u.id)}</a><span class="meta"><span class="num">${fmt(l.v)} 鑽 · Lv ${u.lv??'—'}</span> <span class="pill ${u.sig}">${SIG[u.sig]}</span></span></div><p>${esc(l.t||'')}</p>${msum(l.r)}</div>`}).join('')}</div></div>`;
   }
   det.querySelectorAll('[data-go]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();select(a.dataset.go)}));
 }
@@ -389,7 +442,12 @@ function tables(){
   document.querySelector('#cr tbody').innerHTML=[...cr].sort((a,b)=>b[1].d-a[1].d).slice(0,20)
    .map(([id,c])=>{const L=(cMap.get(id)?.locked||[]).filter(x=>base.some(u=>u.id===x));return `<tr data-id="${esc(id)}" tabindex="0"><td class="cn">${esc(id)}</td><td class="r num">${fmt(c.d)}</td><td class="r num">${c.n}</td><td>${L.length?esc(L.join('、')):'—'}</td></tr>`}).join('');
   bindRows('#watch tr[data-id],#cr tr[data-id]');
+  radarTable();
 }
+document.querySelector('#alts tbody').innerHTML=U.filter(u=>u.alt&&(u.alt.switch||u.sk==='red'||u.alt.conf==='已查')).sort((a,b)=>(b.alt.switch-a.alt.switch)||b.d-a.d)
+ .map(u=>`<tr data-id="${esc(u.id)}" tabindex="0" class="sev ${u.alt.switch?'amber':u.sig==='red'?'red':''}"><td class="un">${esc(u.id)}</td><td><span class="tag">${esc(u.alt.conf)}</span></td>
+ <td>${u.alt.alts.length?u.alt.alts.map(a=>`<span class="un">${esc(a)}</span>`).join('、'):'—'}</td><td><p style="margin:0;font-size:12px">${esc(u.alt.note)}</p></td></tr>`).join('');
+bindRows('#alts tr[data-id]');
 document.querySelector('#evt tbody').innerHTML=U.filter(u=>u.ev.some(e=>e!=='sepreg')).sort((a,b)=>b.d-a.d)
  .map(u=>`<tr data-id="${esc(u.id)}" tabindex="0"><td class="un">${esc(u.id)}</td><td>${evText(u)}</td><td class="r num">${u.lv??'—'}</td><td class="r num">${u.slv??'—'}</td>
  <td class="r num">${fmt(u.d)}</td><td>${spark(u.m)}</td><td class="cn">${esc(u.top??'—')}</td><td><span class="pill ${u.sig}">${SIG[u.sig]}</span></td></tr>`).join('');
