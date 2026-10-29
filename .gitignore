@@ -1,0 +1,4 @@
+# Plaintext user data must never be committed; only data.enc.json is.
+data/
+*.plain.json
+node_modules/
