@@ -222,6 +222,11 @@ body{-webkit-font-smoothing:antialiased}
   </section>
 
   <section class="section">
+    <div class="head"><h2>換帳號偵測</h2><span class="sub">用 FingerprintJS 裝置 ID（fpjs.visitorId）找共用裝置的帳號，再對照新帳號是否送同一位主播。只檢查真退坑與重點用戶，一個裝置被很多帳號用過時可信度較低。</span></div>
+    <div class="card tbl"><table id="alts"><thead><tr><th>用戶</th><th>可信度</th><th>可能同一人</th><th>判讀</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="section">
     <div class="head"><h2>同樂會到場者</h2><span class="sub">7/26 與 9/19 到場名單（來源：報名表 Google Sheet），對照 8–10 月送禮</span></div>
     <div class="card tbl"><table id="evt"><thead><tr><th>用戶</th><th>場次</th><th class="r">Mixpanel Lv</th><th class="r">報名表 Lv</th><th class="r">90 天鑽石</th><th>8→9→10 月</th><th>主要主播</th><th>燈號</th></tr></thead><tbody></tbody></table></div>
   </section>
@@ -293,7 +298,7 @@ const sigOk=u=>st.sig==='all'||(st.sig==='lock'?u.a==='單點暈船大戶':u.sig
 function tiles(list){
   const tot=list.reduce((a,u)=>a+u.d,0),cnt=k=>list.filter(u=>u.sig===k).length;
   $('tiles').innerHTML=[['',list.length,'篩選後用戶'],['',fmt(tot),'90 天送禮鑽石'],
-   ['red',cnt('red'),'🔴 真退坑（送禮＋活躍都掉）'],['amber',cnt('amber'),'🟡 預警（錢包冷／注意力先走）'],
+   ['red',cnt('red'),'🔴 真退坑（送禮＋活躍都掉）'],['amber',cnt('amber'),'🟡 預警（錢包冷／注意力先走／換帳號）'],
    ['green',cnt('green'),'🟢 升溫／新進'],['',list.filter(u=>u.a==='單點暈船大戶').length,'單點暈船大戶']]
    .map(([c,b,s])=>`<div class="tile ${c}"><b>${b}</b><span>${s}</span></div>`).join('');
 }
@@ -398,11 +403,12 @@ function select(id){
     det.innerHTML=`<div><div class="eyebrow">用戶</div><h2 class="un">${esc(u.id)}</h2>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><span class="pill ${u.sig}">${esc(u.sl)}</span><span class="pill arch">${esc(u.a)}</span></div></div>
       <dl class="kv"><dt>Mixpanel 等級</dt><dd class="num">${u.lv??'—'}</dd>${u.slv!=null?`<dt>報名表等級</dt><dd class="num">${u.slv}</dd>`:''}
-      <dt>同樂會</dt><dd>${evText(u)}</dd>
+      <dt>同樂會</dt><dd>${evText(u)}</dd>${u.alt&&u.alt.alts.length?`<dt>可能同一人</dt><dd>${u.alt.alts.map(a=>uMap.has(a)?`<a href="#" class="un" data-go="${esc(a)}">${esc(a)}</a>`:`<span class="un">${esc(a)}</span>`).join('、')} <span class="tag">${esc(u.alt.conf)}</span></dd>`:''}
       <dt>90 天送禮</dt><dd class="num">${fmt(u.d)} 鑽</dd><dt>送禮次數</dt><dd class="num">${u.g}</dd>
       <dt>私訊則數</dt><dd class="num">${u.c}</dd><dt>送禮主播數</dt><dd class="num">${u.nc}</dd>
       <dt>HHI（鑽石）</dt><dd class="num">${u.hhi??'—'}</dd><dt>主要主播</dt><dd class="cn">${esc(u.top??'—')} ${u.ts?`<span class="num">(${Math.round(u.ts*100)}%)</span>`:''}</dd>
       ${u.mig?`<dt>指向轉移</dt><dd>${esc(u.mig)}</dd>`:''}</dl>
+      ${u.alt?`<div class="msum"><b>裝置比對</b><div>${esc(u.alt.note)}</div></div>`:''}
       <div><div class="eyebrow">送禮鑽石（8／9／10 月）</div>${bars(u.m,['8月','9月','10月*'])}</div>
       <div><div class="eyebrow">進直播間次數（8／9／10 月）</div>${bars(u.act,['8月','9月','10月*'])}</div>
       <div><div class="eyebrow">私訊則數（8／9／10 月）</div>${bars(u.cm,['8月','9月','10月*'])}</div>
@@ -438,6 +444,10 @@ function tables(){
   bindRows('#watch tr[data-id],#cr tr[data-id]');
   radarTable();
 }
+document.querySelector('#alts tbody').innerHTML=U.filter(u=>u.alt&&(u.alt.switch||u.sk==='red'||u.alt.conf==='已查')).sort((a,b)=>(b.alt.switch-a.alt.switch)||b.d-a.d)
+ .map(u=>`<tr data-id="${esc(u.id)}" tabindex="0" class="sev ${u.alt.switch?'amber':u.sig==='red'?'red':''}"><td class="un">${esc(u.id)}</td><td><span class="tag">${esc(u.alt.conf)}</span></td>
+ <td>${u.alt.alts.length?u.alt.alts.map(a=>`<span class="un">${esc(a)}</span>`).join('、'):'—'}</td><td><p style="margin:0;font-size:12px">${esc(u.alt.note)}</p></td></tr>`).join('');
+bindRows('#alts tr[data-id]');
 document.querySelector('#evt tbody').innerHTML=U.filter(u=>u.ev.some(e=>e!=='sepreg')).sort((a,b)=>b.d-a.d)
  .map(u=>`<tr data-id="${esc(u.id)}" tabindex="0"><td class="un">${esc(u.id)}</td><td>${evText(u)}</td><td class="r num">${u.lv??'—'}</td><td class="r num">${u.slv??'—'}</td>
  <td class="r num">${fmt(u.d)}</td><td>${spark(u.m)}</td><td class="cn">${esc(u.top??'—')}</td><td><span class="pill ${u.sig}">${SIG[u.sig]}</span></td></tr>`).join('');
